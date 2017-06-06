@@ -3,6 +3,7 @@ port module Main exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Regex exposing (..)
 
 
 main =
@@ -19,7 +20,7 @@ main =
 
 
 type alias Model =
-    { invoices : List Invoice
+    { pets : List Pet
     , numPerPage : Int
     , page : Int
     , filter : String
@@ -28,9 +29,9 @@ type alias Model =
     }
 
 
-type alias Invoice =
+type alias Pet =
     { name : String
-    , amount : Int
+    , meals : Int
     }
 
 
@@ -41,7 +42,7 @@ type SortDirection
 
 init : ( Model, Cmd Msg )
 init =
-    { invoices = initInvoices
+    { pets = initPets
     , numPerPage = 5
     , page = 1
     , filter = ""
@@ -51,31 +52,31 @@ init =
         ! [ Cmd.none ]
 
 
-initInvoices : List Invoice
-initInvoices =
-    [ { name = "Pepper", amount = 3 }
-    , { name = "Deacon", amount = 55 }
-    , { name = "Norberta", amount = 7 }
-    , { name = "Chief", amount = 4 }
-    , { name = "Cinco", amount = 6 }
-    , { name = "Luca", amount = 34 }
-    , { name = "Smokey", amount = 73 }
-    , { name = "Frog", amount = 34 }
-    , { name = "Toad", amount = 32 }
-    , { name = "Lucy", amount = 311 }
-    , { name = "Friendly", amount = 683 }
+initPets : List Pet
+initPets =
+    [ { name = "Pepper", meals = 3 }
+    , { name = "Deacon", meals = 55 }
+    , { name = "Norberta", meals = 7 }
+    , { name = "Chief", meals = 4 }
+    , { name = "Cinco", meals = 6 }
+    , { name = "Luca", meals = 34 }
+    , { name = "Smokey", meals = 73 }
+    , { name = "Frog", meals = 34 }
+    , { name = "Toad", meals = 32 }
+    , { name = "Lucy", meals = 311 }
+    , { name = "Friendly", meals = 683 }
     ]
 
 
 type Msg
-    = NoOp
+    = UpdateFilter String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        NoOp ->
-            model ! []
+        UpdateFilter newFilter ->
+            { model | filter = newFilter } ! []
 
 
 
@@ -85,44 +86,60 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ renderControls model
-        , renderPage model
-        , renderPaginator model
+        [ viewControls model
+        , viewPage model
+        , viewPaginator model
         ]
 
 
-renderControls : Model -> Html Msg
-renderControls model =
-    div [] [ text "controls go HERE" ]
+viewControls : Model -> Html Msg
+viewControls model =
+    header []
+        [ input
+            [ type_ "text"
+            , placeholder "Filter"
+            , autofocus True
+            , value model.filter
+            , onInput UpdateFilter
+            ]
+            []
+        ]
 
 
-renderPage : Model -> Html Msg
-renderPage model =
+viewPage : Model -> Html Msg
+viewPage model =
     table []
-        (renderRows model.invoices)
+        (viewRows model.pets model.filter)
 
 
-renderRows : List Invoice -> List (Html Msg)
-renderRows invoices =
-    viewTableHeader :: List.map renderRow invoices
+viewRows : List Pet -> String -> List (Html Msg)
+viewRows pets filter =
+    let
+        pattern =
+            Regex.caseInsensitive (Regex.regex filter)
+
+        nameMatches pet =
+            Regex.contains pattern pet.name
+    in
+        viewTableHeader :: List.map viewRow (List.filter nameMatches pets)
 
 
 viewTableHeader : Html Msg
 viewTableHeader =
     tr []
         [ th [] [ text "name" ]
-        , th [] [ text "amount" ]
+        , th [] [ text "meals" ]
         ]
 
 
-renderRow : Invoice -> Html Msg
-renderRow invoice =
+viewRow : Pet -> Html Msg
+viewRow pet =
     tr []
-        [ td [] [ text invoice.name ]
-        , td [] [ text (toString invoice.amount) ]
+        [ td [] [ text pet.name ]
+        , td [] [ text (toString pet.meals) ]
         ]
 
 
-renderPaginator : Model -> Html Msg
-renderPaginator model =
+viewPaginator : Model -> Html Msg
+viewPaginator model =
     div [] [ text "paginator goes HERE" ]
