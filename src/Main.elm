@@ -54,17 +54,17 @@ init =
 
 initPets : List Pet
 initPets =
-    [ { name = "Pepper", meals = 3 }
-    , { name = "Deacon", meals = 55 }
-    , { name = "Norberta", meals = 7 }
-    , { name = "Chief", meals = 4 }
+    [ { name = "Chief", meals = 4 }
     , { name = "Cinco", meals = 6 }
-    , { name = "Luca", meals = 34 }
-    , { name = "Smokey", meals = 73 }
-    , { name = "Frog", meals = 34 }
-    , { name = "Toad", meals = 32 }
-    , { name = "Lucy", meals = 311 }
+    , { name = "Deacon", meals = 55 }
     , { name = "Friendly", meals = 683 }
+    , { name = "Frog", meals = 34 }
+    , { name = "Luca", meals = 34 }
+    , { name = "Lucy", meals = 311 }
+    , { name = "Norberta", meals = 7 }
+    , { name = "Pepper", meals = 3 }
+    , { name = "Smokey", meals = 73 }
+    , { name = "Toad", meals = 32 }
     ]
 
 
