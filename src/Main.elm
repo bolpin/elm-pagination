@@ -25,7 +25,7 @@ type alias Model =
     , page : Int
     , filter : String
     , sortField : String
-    , sortDirection : String
+    , sortDirection : SortDirection
     }
 
 
@@ -36,8 +36,8 @@ type alias Pet =
 
 
 type SortDirection
-    = Asc
-    | Desc
+    = Ascending
+    | Descending
 
 
 init : ( Model, Cmd Msg )
@@ -47,7 +47,7 @@ init =
     , page = 1
     , filter = ""
     , sortField = "name"
-    , sortDirection = "asc"
+    , sortDirection = Descending
     }
         ! [ Cmd.none ]
 
@@ -70,6 +70,7 @@ initPets =
 
 type Msg
     = UpdateFilter String
+    | SortBy String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -77,6 +78,17 @@ update msg model =
     case msg of
         UpdateFilter newFilter ->
             { model | filter = newFilter } ! []
+
+        SortBy field ->
+            case ( field, model.sortDirection ) of
+                ( "name", Ascending ) ->
+                    { model | sortDirection = Descending } ! []
+
+                ( "name", Descending ) ->
+                    { model | sortDirection = Ascending } ! []
+
+                ( _, _ ) ->
+                    { model | sortField = "name", sortDirection = Descending } ! []
 
 
 
@@ -109,11 +121,21 @@ viewControls model =
 viewPage : Model -> Html Msg
 viewPage model =
     table []
-        (viewRows model.pets model.filter)
+        (viewRows model.filter model.pets)
 
 
-viewRows : List Pet -> String -> List (Html Msg)
-viewRows pets filter =
+viewRows : String -> List Pet -> List (Html Msg)
+viewRows filter pets =
+    viewTableHeader :: List.map viewRow (filterPets filter pets)
+
+
+sortPets : List Pet -> String -> SortDirection -> List Pet
+sortPets pets sortField sortDirection =
+    pets
+
+
+filterPets : String -> List Pet -> List Pet
+filterPets filter pets =
     let
         pattern =
             Regex.caseInsensitive (Regex.regex filter)
@@ -121,14 +143,31 @@ viewRows pets filter =
         nameMatches pet =
             Regex.contains pattern pet.name
     in
-        viewTableHeader :: List.map viewRow (List.filter nameMatches pets)
+        List.filter nameMatches pets
+
+
+onePagePets : Int -> Int -> List Pet -> List Pet
+onePagePets numPerPage page pets =
+    pets
 
 
 viewTableHeader : Html Msg
 viewTableHeader =
     tr []
-        [ th [] [ text "name" ]
-        , th [] [ text "meals" ]
+        [ th []
+            [ a
+                [ href "#"
+                , onClick (SortBy "name")
+                ]
+                [ text "name" ]
+            ]
+        , th []
+            [ a
+                [ href "#"
+                , onClick (SortBy "meals")
+                ]
+                [ text "meals" ]
+            ]
         ]
 
 
