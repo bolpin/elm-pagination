@@ -82,13 +82,19 @@ update msg model =
         SortBy field ->
             case ( field, model.sortDirection ) of
                 ( "name", Ascending ) ->
-                    { model | sortDirection = Descending } ! []
+                    { model | sortField = "name", sortDirection = Descending } ! []
 
                 ( "name", Descending ) ->
-                    { model | sortDirection = Ascending } ! []
+                    { model | sortField = "name", sortDirection = Ascending } ! []
+
+                ( "meals", Ascending ) ->
+                    { model | sortField = "meals", sortDirection = Descending } ! []
+
+                ( "meals", Descending ) ->
+                    { model | sortField = "meals", sortDirection = Ascending } ! []
 
                 ( _, _ ) ->
-                    { model | sortField = "name", sortDirection = Descending } ! []
+                    { model | sortField = "meals", sortDirection = Ascending } ! []
 
 
 
@@ -101,7 +107,28 @@ view model =
         [ viewControls model
         , viewPage model
         , viewPaginator model
+        , viewFooter model
         ]
+
+
+viewFooter : Model -> Html Msg
+viewFooter model =
+    let
+        sortDir =
+            case model.sortDirection of
+                Ascending ->
+                    "Ascending"
+
+                _ ->
+                    "Descending"
+    in
+        footer []
+            [ ul []
+                [ li [] [ text model.sortField ]
+                , li [] [ text (toString model.page) ]
+                , li [] [ text sortDir ]
+                ]
+            ]
 
 
 viewControls : Model -> Html Msg
