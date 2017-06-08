@@ -111,24 +111,24 @@ view model =
         ]
 
 
+sortDirString : SortDirection -> String
+sortDirString sortDirection =
+    case sortDirection of
+        Ascending ->
+            "⬇"
+
+        _ ->
+            "⬆"
+
+
 viewFooter : Model -> Html Msg
 viewFooter model =
-    let
-        sortDir =
-            case model.sortDirection of
-                Ascending ->
-                    "Ascending"
-
-                _ ->
-                    "Descending"
-    in
-        footer []
-            [ ul []
-                [ li [] [ text model.sortField ]
-                , li [] [ text (toString model.page) ]
-                , li [] [ text sortDir ]
-                ]
+    footer []
+        [ ul []
+            [ li [] [ text model.sortField ]
+            , li [] [ text (toString model.page) ]
             ]
+        ]
 
 
 viewControls : Model -> Html Msg
@@ -148,12 +148,30 @@ viewControls model =
 viewPage : Model -> Html Msg
 viewPage model =
     table []
-        (viewRows model.filter model.pets)
+        (viewRows model)
 
 
-viewRows : String -> List Pet -> List (Html Msg)
-viewRows filter pets =
-    viewTableHeader :: List.map viewRow (filterPets filter pets)
+viewRows : Model -> List (Html Msg)
+viewRows model =
+    let
+        filteredPets =
+            filterPets model.filter model.pets
+
+        sortedFilteredPets =
+            case ( model.sortField, model.sortDirection ) of
+                ( "name", Ascending ) ->
+                    List.sortBy .name filteredPets
+
+                ( "name", Descending ) ->
+                    List.reverse <| List.sortBy .name filteredPets
+
+                ( "meals", Ascending ) ->
+                    List.sortBy .meals filteredPets
+
+                ( _, _ ) ->
+                    List.reverse <| List.sortBy .meals filteredPets
+    in
+        (viewTableHeader model.sortField model.sortDirection) :: List.map viewRow sortedFilteredPets
 
 
 sortPets : List Pet -> String -> SortDirection -> List Pet
@@ -178,24 +196,41 @@ onePagePets numPerPage page pets =
     pets
 
 
-viewTableHeader : Html Msg
-viewTableHeader =
-    tr []
-        [ th []
-            [ a
-                [ href "#"
-                , onClick (SortBy "name")
+viewTableHeader : String -> SortDirection -> Html Msg
+viewTableHeader sortField sortDirection =
+    let
+        nameHeader =
+            case ( sortField, sortDirection ) of
+                ( "name", _ ) ->
+                    "name " ++ (sortDirString sortDirection)
+
+                ( _, _ ) ->
+                    "name"
+
+        mealsHeader =
+            case ( sortField, sortDirection ) of
+                ( "meals", _ ) ->
+                    "meals " ++ (sortDirString sortDirection)
+
+                ( _, _ ) ->
+                    "meals"
+    in
+        tr []
+            [ th []
+                [ a
+                    [ href "#"
+                    , onClick (SortBy "name")
+                    ]
+                    [ text nameHeader ]
                 ]
-                [ text "name" ]
-            ]
-        , th []
-            [ a
-                [ href "#"
-                , onClick (SortBy "meals")
+            , th []
+                [ a
+                    [ href "#"
+                    , onClick (SortBy "meals")
+                    ]
+                    [ text mealsHeader ]
                 ]
-                [ text "meals" ]
             ]
-        ]
 
 
 viewRow : Pet -> Html Msg
