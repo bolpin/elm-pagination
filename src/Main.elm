@@ -1,10 +1,9 @@
 port module Main exposing (..)
 
 import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (..)
-import Regex exposing (..)
-import Array exposing (Array, slice, toList, fromList)
+import Html.Attributes exposing (href, style, placeholder, autofocus, type_, value)
+import Html.Events exposing (onInput, onClick)
+import Regex exposing (caseInsensitive, regex, contains)
 
 
 main =
@@ -142,10 +141,11 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div [ style [ ( "margin", "50px auto" ), ( "width", "200px" ) ] ]
+    div []
         [ h1 [] [ text "List of Pets" ]
         , viewControls model
-        , viewPage model
+        , viewPaginator model
+        , viewOnePage model
         , viewPaginator model
         ]
 
@@ -192,10 +192,30 @@ viewControls model =
         ]
 
 
-viewPage : Model -> Html Msg
-viewPage model =
+viewOnePage : Model -> Html Msg
+viewOnePage model =
     table []
         (viewRows model)
+
+
+viewRowsRaw : Model -> List (Html Msg)
+viewRowsRaw model =
+    let
+        filteredPets =
+            filterPets model.filter model.pets
+    in
+        (viewTableHeader model.sortField model.sortDirection) :: List.map viewRow filteredPets
+
+
+onePagePets : List Pet -> Int -> Int -> List Pet
+onePagePets lst page numPerPage =
+    let
+        startIndex =
+            (page - 1) * numPerPage
+    in
+        lst
+            |> List.drop startIndex
+            |> List.take numPerPage
 
 
 viewRows : Model -> List (Html Msg)
@@ -217,17 +237,8 @@ viewRows model =
 
                 ( _, _ ) ->
                     List.reverse <| List.sortBy .meals filteredPets
-
-        firstIndex =
-            (1 - model.page) * model.numPerPage
-
-        lastIndex =
-            Basics.min (List.length model.pets) (firstIndex + model.numPerPage)
-
-        -- paginatedPets =
-        --     toList (slice firstIndex (firstIndex + model.numPerPage) (model.sortedFilteredPets))
     in
-        (viewTableHeader model.sortField model.sortDirection) :: List.map viewRow sortedFilteredPets
+        (viewTableHeader model.sortField model.sortDirection) :: List.map viewRow (onePagePets sortedFilteredPets model.page model.numPerPage)
 
 
 filterPets : String -> List Pet -> List Pet
@@ -240,12 +251,6 @@ filterPets filter pets =
             Regex.contains pattern pet.name
     in
         List.filter nameMatches pets
-
-
-
--- onePagePets : Int -> Int -> List Pet -> List Pet
--- onePagePets numPerPage page pets =
---     pets
 
 
 viewTableHeader : String -> SortDirection -> Html Msg
@@ -278,7 +283,7 @@ viewTableHeader sortField sortDirection =
 viewRow : Pet -> Html Msg
 viewRow pet =
     tr []
-        [ td [] [ text pet.name ]
+        [ td [ style [ ( "minWidth", "150px" ) ] ] [ text pet.name ]
         , td [] [ text (toString pet.meals) ]
         ]
 
