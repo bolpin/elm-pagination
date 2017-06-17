@@ -1,7 +1,7 @@
 port module Main exposing (..)
 
 import Html exposing (..)
-import Html.Attributes exposing (href, style, placeholder, autofocus, type_, value)
+import Html.Attributes exposing (href, style, disabled, placeholder, autofocus, type_, value)
 import Html.Events exposing (onInput, onClick)
 import Regex exposing (caseInsensitive, regex, contains)
 
@@ -150,19 +150,6 @@ view model =
         ]
 
 
-sortDirString : String -> String -> SortDirection -> String
-sortDirString sortField field sortDirection =
-    case ( (sortField == field), sortDirection ) of
-        ( False, _ ) ->
-            ""
-
-        ( True, Ascending ) ->
-            " ⬇"
-
-        ( True, Descending ) ->
-            " ⬆"
-
-
 numPages : Model -> Int
 numPages model =
     1 + (List.length model.pets // model.numPerPage)
@@ -198,15 +185,6 @@ viewOnePage model =
         (viewRows model)
 
 
-viewRowsRaw : Model -> List (Html Msg)
-viewRowsRaw model =
-    let
-        filteredPets =
-            filterPets model.filter model.pets
-    in
-        (viewTableHeader model.sortField model.sortDirection) :: List.map viewRow filteredPets
-
-
 onePagePets : List Pet -> Int -> Int -> List Pet
 onePagePets lst page numPerPage =
     let
@@ -237,8 +215,12 @@ viewRows model =
 
                 ( _, _ ) ->
                     List.reverse <| List.sortBy .meals filteredPets
+
+        onePage =
+            (onePagePets sortedFilteredPets model.page model.numPerPage)
     in
-        (viewTableHeader model.sortField model.sortDirection) :: List.map viewRow (onePagePets sortedFilteredPets model.page model.numPerPage)
+        (viewTableHeader model.sortField model.sortDirection)
+            :: List.map viewRow onePage
 
 
 filterPets : String -> List Pet -> List Pet
@@ -251,6 +233,19 @@ filterPets filter pets =
             Regex.contains pattern pet.name
     in
         List.filter nameMatches pets
+
+
+sortDirString : String -> String -> SortDirection -> String
+sortDirString sortField field sortDirection =
+    case ( (sortField == field), sortDirection ) of
+        ( False, _ ) ->
+            ""
+
+        ( True, Ascending ) ->
+            " ⬇"
+
+        ( True, Descending ) ->
+            " ⬆"
 
 
 viewTableHeader : String -> SortDirection -> Html Msg
@@ -304,43 +299,43 @@ viewPaginator model =
 viewPaginatorControls : Model -> Html Msg
 viewPaginatorControls model =
     let
-        enablePrev =
-            model.page /= 1
+        isFirst =
+            model.page == 1
 
-        enableNext =
-            model.page /= numPages model
+        isLast =
+            model.page == numPages model
     in
         div []
-            [ a
-                [ href "#"
-                , onClick GoToFirst
+            [ button
+                [ onClick GoToFirst
+                , disabled isFirst
                 , style
                     [ ( "padding-right", "1em" )
                     , ( "cursor", "pointer" )
                     ]
                 ]
                 [ text "first" ]
-            , a
-                [ href "#"
-                , onClick GoToPrev
+            , button
+                [ onClick GoToPrev
+                , disabled isFirst
                 , style
                     [ ( "padding-right", "1em" )
                     , ( "cursor", "pointer" )
                     ]
                 ]
                 [ text "prev" ]
-            , a
-                [ href "#"
-                , onClick GoToNext
+            , button
+                [ onClick GoToNext
+                , disabled isLast
                 , style
                     [ ( "padding-right", "1em" )
                     , ( "cursor", "pointer" )
                     ]
                 ]
                 [ text "next" ]
-            , a
-                [ href "#"
-                , onClick GoToLast
+            , button
+                [ onClick GoToLast
+                , disabled isLast
                 , style
                     [ ( "padding-right", "1em" )
                     , ( "cursor", "pointer" )
