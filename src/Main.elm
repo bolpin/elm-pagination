@@ -24,6 +24,7 @@ type alias Model =
     , numPerPage : Int
     , page : Int
     , filter : String
+    , filteredLength : Int
     , sortField : String
     , sortDirection : SortDirection
     }
@@ -46,6 +47,7 @@ init =
     , numPerPage = 5
     , page = 1
     , filter = ""
+    , filteredLength = List.length initPets
     , sortField = "name"
     , sortDirection = Descending
     }
@@ -71,7 +73,6 @@ initPets =
     , { name = "Lassie", meals = 14 }
     , { name = "Deacon", meals = 55 }
     , { name = "Friendly", meals = 683 }
-    , { name = "Frog", meals = 34 }
     , { name = "Luca", meals = 34 }
     , { name = "Lucy", meals = 311 }
     , { name = "Norberta", meals = 7 }
@@ -79,7 +80,6 @@ initPets =
     , { name = "Pepper", meals = 3 }
     , { name = "Smokey", meals = 73 }
     , { name = "Mason", meals = 88 }
-    , { name = "Toad", meals = 32 }
     ]
 
 
@@ -112,7 +112,11 @@ update msg model =
             { model | page = (numPages model) } ! []
 
         UpdateFilter newFilter ->
-            { model | filter = newFilter } ! []
+            let
+                remainingPetsCount =
+                    List.length (filterPets newFilter model.pets)
+            in
+                { model | page = 1, filter = newFilter, filteredLength = remainingPetsCount } ! []
 
         SortBy newField ->
             let
@@ -132,7 +136,12 @@ update msg model =
                         False ->
                             model.sortDirection
             in
-                { model | sortField = newField, sortDirection = (newDirection newField) } ! []
+                { model
+                    | page = 1
+                    , sortField = newField
+                    , sortDirection = (newDirection newField)
+                }
+                    ! []
 
 
 
@@ -146,13 +155,7 @@ view model =
         , viewControls model
         , viewPaginator model
         , viewOnePage model
-        , viewPaginator model
         ]
-
-
-numPages : Model -> Int
-numPages model =
-    1 + (List.length model.pets // model.numPerPage)
 
 
 viewFooter : Model -> Html Msg
@@ -170,7 +173,7 @@ viewControls model =
     header []
         [ input
             [ type_ "text"
-            , placeholder "Filter"
+            , placeholder "Filter by Name"
             , autofocus True
             , value model.filter
             , onInput UpdateFilter
@@ -294,6 +297,11 @@ viewPaginator model =
             )
         , viewPaginatorControls model
         ]
+
+
+numPages : Model -> Int
+numPages model =
+    1 + (model.filteredLength // model.numPerPage)
 
 
 viewPaginatorControls : Model -> Html Msg
