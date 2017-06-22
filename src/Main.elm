@@ -151,11 +151,28 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ h1 [] [ text "List of Pets" ]
+        [ h1 []
+            [ text
+                ("List of "
+                    ++ toString model.filteredLength
+                    ++ " "
+                    ++ pluralizer "Pet" model.filteredLength
+                )
+            ]
         , viewControls model
         , viewPaginator model
         , viewOnePage model
         ]
+
+
+pluralizer : String -> Int -> String
+pluralizer singularForm count =
+    case count of
+        1 ->
+            singularForm
+
+        _ ->
+            singularForm ++ "s"
 
 
 viewFooter : Model -> Html Msg
