@@ -1,14 +1,15 @@
-port module Main exposing (..)
+port module Main exposing (Model, Msg(..), Pet, SortDirection(..), filterPets, initPets, initialModel, main, numPages, onePagePets, sortDirString, update, view, viewControls, viewFooter, viewOnePage, viewPaginator, viewPaginatorControls, viewRow, viewRows, viewTableHeader)
 
+import Browser exposing (sandbox)
 import Html exposing (..)
-import Html.Attributes exposing (href, style, disabled, placeholder, autofocus, type_, value)
-import Html.Events exposing (onInput, onClick)
-import Regex exposing (caseInsensitive, regex, contains)
+import Html.Attributes exposing (autofocus, disabled, href, placeholder, style, type_, value)
+import Html.Events exposing (onClick, onInput)
 
 
+main : Program () Model Msg
 main =
-    Html.beginnerProgram
-        { model = init
+    Browser.sandbox
+        { init = initialModel
         , view = view
         , update = update
         }
@@ -40,8 +41,8 @@ type SortDirection
     | Descending
 
 
-init : Model
-init =
+initialModel : Model
+initialModel =
     { pets = initPets
     , numPerPage = 5
     , page = 1
@@ -101,25 +102,25 @@ update msg model =
             { model | page = 1 }
 
         GoToPrev ->
-            { model | page = (Basics.max 1 (model.page - 1)) }
+            { model | page = Basics.max 1 (model.page - 1) }
 
         GoToNext ->
-            { model | page = (Basics.min (numPages model) (model.page + 1)) }
+            { model | page = Basics.min (numPages model) (model.page + 1) }
 
         GoToLast ->
-            { model | page = (numPages model) }
+            { model | page = numPages model }
 
         UpdateFilter newFilter ->
             let
                 remainingPetsCount =
                     List.length (filterPets newFilter model.pets)
             in
-                { model | page = 1, filter = newFilter, filteredLength = remainingPetsCount }
+            { model | page = 1, filter = newFilter, filteredLength = remainingPetsCount }
 
         SortBy newField ->
             let
                 swapDirection =
-                    case (model.sortDirection) of
+                    case model.sortDirection of
                         Ascending ->
                             Descending
 
@@ -127,18 +128,18 @@ update msg model =
                             Ascending
 
                 newDirection newSortField =
-                    case (model.sortField == newSortField) of
+                    case model.sortField == newSortField of
                         True ->
                             swapDirection
 
                         False ->
                             model.sortDirection
             in
-                { model
-                    | page = 1
-                    , sortField = newField
-                    , sortDirection = (newDirection newField)
-                }
+            { model
+                | page = 1
+                , sortField = newField
+                , sortDirection = newDirection newField
+            }
 
 
 
@@ -160,7 +161,7 @@ viewFooter model =
     footer []
         [ ul []
             [ li [] [ text model.sortField ]
-            , li [] [ text (toString model.page) ]
+            , li [] [ text (String.fromInt model.page) ]
             ]
         ]
 
@@ -191,9 +192,9 @@ onePagePets lst page numPerPage =
         startIndex =
             (page - 1) * numPerPage
     in
-        lst
-            |> List.drop startIndex
-            |> List.take numPerPage
+    lst
+        |> List.drop startIndex
+        |> List.take numPerPage
 
 
 viewRows : Model -> List (Html Msg)
@@ -217,27 +218,24 @@ viewRows model =
                     List.reverse <| List.sortBy .meals filteredPets
 
         onePage =
-            (onePagePets sortedFilteredPets model.page model.numPerPage)
+            onePagePets sortedFilteredPets model.page model.numPerPage
     in
-        (viewTableHeader model.sortField model.sortDirection)
-            :: List.map viewRow onePage
+    viewTableHeader model.sortField model.sortDirection
+        :: List.map viewRow onePage
 
 
 filterPets : String -> List Pet -> List Pet
-filterPets filter pets =
+filterPets filterString pets =
     let
-        pattern =
-            Regex.caseInsensitive (Regex.regex filter)
-
         nameMatches pet =
-            Regex.contains pattern pet.name
+            String.contains (String.toLower filterString) (String.toLower pet.name)
     in
-        List.filter nameMatches pets
+    List.filter nameMatches pets
 
 
 sortDirString : String -> String -> SortDirection -> String
 sortDirString sortField field sortDirection =
-    case ( (sortField == field), sortDirection ) of
+    case ( sortField == field, sortDirection ) of
         ( False, _ ) ->
             ""
 
@@ -257,29 +255,33 @@ viewTableHeader sortField sortDirection =
         mealsHeader =
             "Meals" ++ sortDirString sortField "meals" sortDirection
     in
-        tr []
-            [ th []
-                [ a
-                    [ href "#"
-                    , onClick (SortBy "name")
-                    ]
-                    [ text nameHeader ]
+    tr []
+        [ th []
+            [ a
+                [ href "#"
+                , onClick (SortBy "name")
                 ]
-            , th []
-                [ a
-                    [ href "#"
-                    , onClick (SortBy "meals")
-                    ]
-                    [ text mealsHeader ]
-                ]
+                [ text nameHeader ]
             ]
+        , th []
+            [ a
+                [ href "#"
+                , onClick (SortBy "meals")
+                ]
+                [ text mealsHeader ]
+            ]
+        ]
 
 
 viewRow : Pet -> Html Msg
 viewRow pet =
     tr []
-        [ td [ style [ ( "minWidth", "150px" ) ] ] [ text pet.name ]
-        , td [] [ text (toString pet.meals) ]
+        [ td
+            [-- style [ ( "minWidth", "150px" )
+             -- ]
+            ]
+            [ text pet.name ]
+        , td [] [ text (String.fromInt pet.meals) ]
         ]
 
 
@@ -288,9 +290,9 @@ viewPaginator model =
     div []
         [ text
             ("page "
-                ++ toString model.page
+                ++ String.fromInt model.page
                 ++ " of "
-                ++ toString (numPages model)
+                ++ String.fromInt (numPages model)
             )
         , viewPaginatorControls model
         ]
@@ -310,41 +312,37 @@ viewPaginatorControls model =
         isLast =
             model.page == numPages model
     in
-        div []
-            [ button
-                [ onClick GoToFirst
-                , disabled isFirst
-                , style
-                    [ ( "padding-right", "1em" )
-                    , ( "cursor", "pointer" )
-                    ]
-                ]
-                [ text "first" ]
-            , button
-                [ onClick GoToPrev
-                , disabled isFirst
-                , style
-                    [ ( "padding-right", "1em" )
-                    , ( "cursor", "pointer" )
-                    ]
-                ]
-                [ text "prev" ]
-            , button
-                [ onClick GoToNext
-                , disabled isLast
-                , style
-                    [ ( "padding-right", "1em" )
-                    , ( "cursor", "pointer" )
-                    ]
-                ]
-                [ text "next" ]
-            , button
-                [ onClick GoToLast
-                , disabled isLast
-                , style
-                    [ ( "padding-right", "1em" )
-                    , ( "cursor", "pointer" )
-                    ]
-                ]
-                [ text "last" ]
+    div []
+        [ button
+            [ onClick GoToFirst
+            , disabled isFirst
+            , style "padding-left" "1em"
+            , style "padding-right" "1em"
+            , style "cursor" "pointer"
             ]
+            [ text "first" ]
+        , button
+            [ onClick GoToPrev
+            , disabled isFirst
+            , style "padding-left" "1em"
+            , style "padding-right" "1em"
+            , style "cursor" "pointer"
+            ]
+            [ text "prev" ]
+        , button
+            [ onClick GoToNext
+            , disabled isLast
+            , style "padding-left" "1em"
+            , style "padding-right" "1em"
+            , style "cursor" "pointer"
+            ]
+            [ text "next" ]
+        , button
+            [ onClick GoToLast
+            , disabled isLast
+            , style "padding-left" "1em"
+            , style "padding-right" "1em"
+            , style "cursor" "pointer"
+            ]
+            [ text "last" ]
+        ]

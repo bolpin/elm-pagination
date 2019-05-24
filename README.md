@@ -1,9 +1,10 @@
-A filter-page-sort sample application
+A demonstration of filter-page-sort behavior for a list of data on the client.
 
-* run elm-reactor
-* browse to http://localhost:8000/src/Pets.elm#
+* run 
+  ``` $ elm reactor```
+* browse to http://localhost:8000/src/Pets.elm
 
 
+Here's a version for an earlier Elm:
 https://ellie-app.com/3xHPqdTFzzGa1/0
 
-https://gist.github.com/anonymous/41f4e46401e971123d42a40f0499d2f3
